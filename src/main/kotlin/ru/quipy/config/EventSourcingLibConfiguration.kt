@@ -4,10 +4,17 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.data.mongodb.repository.MongoRepository
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import ru.quipy.api.ProjectAggregate
+import ru.quipy.api.UserAggregate
 import ru.quipy.core.EventSourcingServiceFactory
+import ru.quipy.entity.AppUser
 import ru.quipy.logic.ProjectAggregateState
+import ru.quipy.logic.UserAggregateState
 import ru.quipy.projections.AnnotationBasedProjectEventsSubscriber
+import ru.quipy.service.UserRepository
 import ru.quipy.streams.AggregateEventStreamManager
 import ru.quipy.streams.AggregateSubscriptionsManager
 import java.util.*
@@ -50,11 +57,20 @@ class EventSourcingLibConfiguration {
     @Autowired
     private lateinit var eventStreamManager: AggregateEventStreamManager
 
+//    @Autowired
+//    private lateinit var passwordEncoder: PasswordEncoder
+
     /**
      * Use this object to create/update the aggregate
      */
     @Bean
     fun projectEsService() = eventSourcingServiceFactory.create<UUID, ProjectAggregate, ProjectAggregateState>()
+
+    @Bean
+    fun userEsService() = eventSourcingServiceFactory.create<UUID, UserAggregate, UserAggregateState>()
+
+//    @Bean
+//    fun passwordEncoder() = BCryptPasswordEncoder()
 
     @PostConstruct
     fun init() {
