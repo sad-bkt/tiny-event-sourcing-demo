@@ -38,6 +38,7 @@ class SecurityConfiguration(
 //                .antMatchers("/h2-console/**").permitAll()
                 .antMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
+                .antMatchers(HttpMethod.POST, "/product/createProduct").permitAll()
                 .anyRequest().hasAuthority("ACCESS")
                 .and()
                 .addFilterAt(authenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
