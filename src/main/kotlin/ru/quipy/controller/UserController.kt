@@ -13,16 +13,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.client.HttpClientErrorException
-import ru.quipy.api.ProjectAggregate
 import ru.quipy.api.UserAggregate
-import ru.quipy.api.UserCreatedEvent
+import ru.quipy.api.UserDeletedEvent
 import ru.quipy.core.EventSourcingService
-import ru.quipy.logic.ProjectAggregateState
+import ru.quipy.entity.AppUser
 import ru.quipy.logic.UserAggregateState
 import ru.quipy.logic.deleteUser
 import ru.quipy.logic.registerUser
 import ru.quipy.service.UserRepository
+import ru.quipy.service.DefaultUserService
 import ru.quipy.service.UserService
 import java.util.*
 
@@ -31,21 +30,48 @@ import java.util.*
 class UserController(
     val userEsService: EventSourcingService<UUID, UserAggregate, UserAggregateState>,
     val userRepository: UserRepository,
-    val passwordEncoder: PasswordEncoder
+    val passwordEncoder: PasswordEncoder,
+    val userService: UserService
 ) {
     @PostMapping
     @Operation(
         summary = "Register new user",
         responses = [
-            ApiResponse(description = "OK", responseCode = "200"),
+            ApiResponse(description = "OK", responseCode = "201", content = [Content()]),
             ApiResponse(description = "Bad request", responseCode = "400", content = [Content()])
         ]
     )
     fun register(@RequestBody request: RegistrationRequest) : ResponseEntity<Any> {
-//        userService.registerUser(request)
-        val event = userEsService.create { it.registerUser(request.toEntity(passwordEncoder)) }
-        val resp = userRepository.save(event.user)
-        return ResponseEntity<Any>(resp.toModel(), HttpStatus.CREATED)
+        var resp : AppUserModel? = null
+        if (request.role != "user")
+            return ResponseEntity<Any>("You can create only regular user", HttpStatus.BAD_REQUEST)
+        runCatching {
+            resp = userService.register(request)
+        }.onSuccess {
+            return ResponseEntity<Any>(resp, HttpStatus.CREATED)
+        }.onFailure { e ->
+            return ResponseEntity<Any>(e.message, HttpStatus.CONFLICT)
+        }
+        return ResponseEntity<Any>(null, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+
+    @PostMapping("/admin")
+    @Operation(
+        summary = "Register user with any role",
+        responses = [
+            ApiResponse(description = "OK", responseCode = "201", content = [Content()]),
+            ApiResponse(description = "Bad request", responseCode = "400", content = [Content()])
+        ],
+        security = [SecurityRequirement(name = "bearerAuth")]
+    )
+    fun registerAdmin(@RequestBody request: RegistrationRequest) : ResponseEntity<Any> {
+        var resp : AppUserModel? = null
+        runCatching {
+            resp = userService.register(request)
+        }.onSuccess {
+            return ResponseEntity<Any>(resp, HttpStatus.CREATED)
+        }
+        return ResponseEntity<Any>(null, HttpStatus.INTERNAL_SERVER_ERROR)
     }
 
     @GetMapping("/me")
@@ -58,11 +84,8 @@ class UserController(
         security = [SecurityRequirement(name = "bearerAuth")]
     )
     fun getAccountData(@Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails): ResponseEntity<Any> {
-        val userData = userRepository.findOneByEmail(user.username)
-        if (userData == null)
-            return ResponseEntity<Any>(null, HttpStatus.NO_CONTENT)
-        return ResponseEntity<Any>(userData.toModel(), HttpStatus.FOUND)
-//        userService.getAccountData(user)
+        val userData = userService.getAccountData(user) ?: return ResponseEntity<Any>(null, HttpStatus.NOT_FOUND)
+        return ResponseEntity<Any>(userData, HttpStatus.OK)
     }
 
     @DeleteMapping("/me")
@@ -74,6 +97,32 @@ class UserController(
         ],
         security = [SecurityRequirement(name = "bearerAuth")]
     )
-    fun deleteCurrentUser(@Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails) =
-            userEsService.create { it.deleteUser(user) }
+    fun deleteCurrentUser(@Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails): ResponseEntity<Any> {
+        var res: UserDeletedEvent? = null
+        runCatching {
+            res = userService.deleteUser(user.username) ?: return ResponseEntity<Any>(null, HttpStatus.NOT_FOUND)
+        }.onSuccess {
+            return ResponseEntity<Any>(res, HttpStatus.OK)
+        }
+        return ResponseEntity<Any>(null, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+
+    @DeleteMapping("/admin/{email}")
+    @Operation(
+        summary = "Delete any user",
+        responses = [
+            ApiResponse(description = "OK", responseCode = "200"),
+            ApiResponse(description = "User not found", responseCode = "404", content = [Content()])
+        ],
+        security = [SecurityRequirement(name = "bearerAuth")]
+    )
+    fun deleteAnyUser(@PathVariable email: String): ResponseEntity<Any> {
+        var res: UserDeletedEvent? = null
+        runCatching {
+            res = userService.deleteUser(email) ?: return ResponseEntity<Any>(null, HttpStatus.NOT_FOUND)
+        }.onSuccess {
+            return ResponseEntity<Any>(res, HttpStatus.OK)
+        }.onFailure { e -> return ResponseEntity<Any>(e.message, HttpStatus.INTERNAL_SERVER_ERROR)}
+        return ResponseEntity<Any>(null, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
 }

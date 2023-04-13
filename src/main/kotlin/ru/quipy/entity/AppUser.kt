@@ -13,17 +13,9 @@ class AppUser(
     var name: String? = null,
     var surname: String? = null,
     var password: String? = null,
-    val aggregateId: UUID
+    val aggregateId: UUID,
+    val role: String
 ) {
-
-//    constructor()
-//
-//    constructor(name: String?, surname: String?, email: String?, password: String?) {
-//        this.name = name
-//        this.surname = surname
-//        this.email = email
-//        this.password = password
-//    }
 
     fun toModel(): AppUserModel = kotlin.runCatching {
         AppUserModel(
@@ -31,7 +23,12 @@ class AppUser(
             surname = this.surname!!,
             email = this.email!!,
             password = this.password!!,
-            aggregateId = this.aggregateId!!
+            aggregateId = this.aggregateId!!,
+            role = this.role!!
         )
     }.getOrElse { exception -> throw IllegalStateException("Some of user fields are null", exception) }
+
+    override fun toString(): String {
+        return "{ email: $email, aggregateId: ${aggregateId.toString()}, role: $role}"
+    }
 }

@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -26,8 +28,15 @@ class AuthController(private val authService: AuthService) {
             ApiResponse(description = "Invalid password", responseCode = "403", content = [Content()])
         ]
     )
-    fun authenticate(@RequestBody request: AuthenticationRequest): AuthenticationResult =
-            authService.authenticate(request)
+    fun authenticate(@RequestBody request: AuthenticationRequest): ResponseEntity<Any> {
+        var resp : AuthenticationResult? = null
+        kotlin.runCatching {
+            resp = authService.authenticate(request)
+        }.onSuccess {
+            return ResponseEntity<Any>(resp, HttpStatus.OK)
+        }.onFailure { e -> return ResponseEntity<Any>(e.message, HttpStatus.BAD_REQUEST) }
+        return ResponseEntity<Any>(null, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
 
     @PostMapping("/refresh")
     @Operation(
@@ -38,6 +47,13 @@ class AuthController(private val authService: AuthService) {
         ],
         security = [SecurityRequirement(name = "bearerAuth")]
     )
-    fun refresh(authentication: Authentication): AuthenticationResult =
-            authService.refresh(authentication)
+    fun refresh(authentication: Authentication): ResponseEntity<Any> {
+        var resp : AuthenticationResult? = null
+        kotlin.runCatching {
+            resp = authService.refresh(authentication)
+        }.onSuccess {
+            return ResponseEntity<Any>(resp, HttpStatus.OK)
+        }.onFailure { e -> return ResponseEntity<Any>(e.message, HttpStatus.BAD_REQUEST) }
+        return ResponseEntity<Any>(null, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
 }

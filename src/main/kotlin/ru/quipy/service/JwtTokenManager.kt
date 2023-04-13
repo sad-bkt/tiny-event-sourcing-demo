@@ -23,9 +23,11 @@ class JwtTokenManager(private val properties: SecurityProperties) {
     fun readAccessToken(token: String): UserDetails {
         val username = getUsernameFromToken(token)
         val type = getClaimFromToken(token) { it["type"] }
+        val authorities = getAuthoritiesFromToken(token).toMutableList()
+        authorities.add(SimpleGrantedAuthority("ACCESS"))
         if (TokenType.ACCESS.name.lowercase(Locale.getDefault()) != type)
             throw IllegalArgumentException("Token is not of ACCESS type")
-        return User(username, token, mutableListOf(SimpleGrantedAuthority("ACCESS")))
+        return User(username, token, authorities)
     }
 
     /**
@@ -36,9 +38,11 @@ class JwtTokenManager(private val properties: SecurityProperties) {
     fun readRefreshToken(token: String): UserDetails {
         val username = getUsernameFromToken(token)
         val type = getClaimFromToken(token) { it["type"] }
+        val authorities = getAuthoritiesFromToken(token).toMutableList()
+        authorities.add(SimpleGrantedAuthority("REFRESH"))
         if (TokenType.REFRESH.name.lowercase(Locale.getDefault()) != type)
             throw IllegalArgumentException("Token is not of REFRESH type")
-        return User(username, token, mutableListOf(SimpleGrantedAuthority("REFRESH")))
+        return User(username, token, authorities)
     }
 
     fun <T> getClaimFromToken(token: String, claimsResolver: (Claims) -> T): T {
@@ -56,6 +60,14 @@ class JwtTokenManager(private val properties: SecurityProperties) {
             ((claims.get("roles", List::class.java) ?: emptyList<String>()) as List<*>)
                     .filterIsInstance(String::class.java)
         }
+    }
+
+    fun getAuthoritiesFromToken(token: String): List<SimpleGrantedAuthority> {
+        val roles = getClaimFromToken(token) { claims ->
+            ((claims.get("roles", List::class.java) ?: emptyList<String>()) as List<*>)
+                .filterIsInstance(String::class.java)
+        }
+        return roles.map { SimpleGrantedAuthority(it) }
     }
 
     //retrieve expiration date from jwt token

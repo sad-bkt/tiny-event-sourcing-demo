@@ -12,8 +12,7 @@ const val I_USER_DELETED_EVENT = "I_USER_DELETED_EVENT"
 @DomainEvent(name = I_USER_CREATED_EVENT)
 class UserCreatedEvent(
     val user: AppUser,
-    createdAt: Long = System.currentTimeMillis(),
-//    val userId: UUID = UUID.randomUUID()
+    createdAt: Long = System.currentTimeMillis()
 ) : Event<UserAggregate>(
     name = I_USER_CREATED_EVENT,
     createdAt = createdAt,

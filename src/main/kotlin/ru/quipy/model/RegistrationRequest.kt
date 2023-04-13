@@ -9,7 +9,8 @@ data class RegistrationRequest(
         val name: String,
         val surname: String,
         val email: String,
-        val password: String
+        val password: String,
+        val role: String = "user"
 ) {
 
     fun toEntity(passwordEncoder: PasswordEncoder, userId: UUID = UUID.randomUUID()): AppUser =
@@ -18,7 +19,8 @@ data class RegistrationRequest(
             surname = this.surname,
             email = this.email,
             password = passwordEncoder.encode(this.password),
-            aggregateId = userId
+            aggregateId = userId,
+            role = this.role
         )
 
 }
