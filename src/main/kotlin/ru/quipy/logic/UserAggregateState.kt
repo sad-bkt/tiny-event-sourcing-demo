@@ -3,6 +3,7 @@ package ru.quipy.logic
 import com.itmo.microservices.demo.users.api.model.AppUserModel
 import org.springframework.stereotype.Component
 import ru.quipy.api.UserAggregate
+import ru.quipy.api.UserCreateBasket
 import ru.quipy.api.UserCreatedEvent
 import ru.quipy.api.UserDeletedEvent
 import ru.quipy.core.annotations.StateTransitionFunc
@@ -14,6 +15,7 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
     private lateinit var userStateId: UUID
     var createdAt: Long = System.currentTimeMillis()
     var updatedAt: Long = System.currentTimeMillis()
+    private lateinit var basketId: UUID
 
     var active: Boolean = true
 
@@ -23,6 +25,11 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
 
     override fun getId() = userStateId
 
+    fun getBasketId() = basketId
+
+    fun existBasket(): Boolean {
+        return this::basketId.isInitialized
+    }
     @StateTransitionFunc
     fun registerUserApply(event: UserCreatedEvent) {
         userStateId = event.user.aggregateId
@@ -33,5 +40,10 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
     fun deleteUserApply(event: UserDeletedEvent) {
         active = false
         updatedAt = System.currentTimeMillis()
+    }
+
+    @StateTransitionFunc
+    fun createBasketUserApply(event: UserCreateBasket) {
+        basketId = event.basketId
     }
 }
