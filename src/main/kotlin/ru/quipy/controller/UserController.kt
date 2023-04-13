@@ -16,12 +16,8 @@ import org.springframework.web.bind.annotation.*
 import ru.quipy.api.UserAggregate
 import ru.quipy.api.UserDeletedEvent
 import ru.quipy.core.EventSourcingService
-import ru.quipy.entity.AppUser
 import ru.quipy.logic.UserAggregateState
-import ru.quipy.logic.deleteUser
-import ru.quipy.logic.registerUser
 import ru.quipy.service.UserRepository
-import ru.quipy.service.DefaultUserService
 import ru.quipy.service.UserService
 import java.util.*
 
@@ -41,8 +37,8 @@ class UserController(
             ApiResponse(description = "Bad request", responseCode = "400", content = [Content()])
         ]
     )
-    fun register(@RequestBody request: RegistrationRequest) : ResponseEntity<Any> {
-        var resp : AppUserModel? = null
+    fun register(@RequestBody request: RegistrationRequest): ResponseEntity<Any> {
+        var resp: AppUserModel? = null
         if (request.role != "user")
             return ResponseEntity<Any>("You can create only regular user", HttpStatus.BAD_REQUEST)
         runCatching {
@@ -64,8 +60,8 @@ class UserController(
         ],
         security = [SecurityRequirement(name = "bearerAuth")]
     )
-    fun registerAdmin(@RequestBody request: RegistrationRequest) : ResponseEntity<Any> {
-        var resp : AppUserModel? = null
+    fun registerAdmin(@RequestBody request: RegistrationRequest): ResponseEntity<Any> {
+        var resp: AppUserModel? = null
         runCatching {
             resp = userService.register(request)
         }.onSuccess {
@@ -122,7 +118,7 @@ class UserController(
             res = userService.deleteUser(email) ?: return ResponseEntity<Any>(null, HttpStatus.NOT_FOUND)
         }.onSuccess {
             return ResponseEntity<Any>(res, HttpStatus.OK)
-        }.onFailure { e -> return ResponseEntity<Any>(e.message, HttpStatus.INTERNAL_SERVER_ERROR)}
+        }.onFailure { e -> return ResponseEntity<Any>(e.message, HttpStatus.INTERNAL_SERVER_ERROR) }
         return ResponseEntity<Any>(null, HttpStatus.INTERNAL_SERVER_ERROR)
     }
 }

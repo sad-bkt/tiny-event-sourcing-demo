@@ -1,6 +1,5 @@
 package ru.quipy.api
 
-import com.itmo.microservices.demo.users.api.model.AppUserModel
 import ru.quipy.core.annotations.DomainEvent
 import ru.quipy.domain.Event
 import ru.quipy.entity.AppUser
@@ -8,6 +7,7 @@ import java.util.*
 
 const val I_USER_CREATED_EVENT = "I_USER_CREATED_EVENT"
 const val I_USER_DELETED_EVENT = "I_USER_DELETED_EVENT"
+const val USER_CREATE_BASKET = "USER_CREATE_BASKET"
 
 @DomainEvent(name = I_USER_CREATED_EVENT)
 class UserCreatedEvent(
@@ -27,3 +27,9 @@ class UserDeletedEvent(
     createdAt = createdAt,
 )
 
+@DomainEvent(name = USER_CREATE_BASKET)
+class UserCreateBasket(
+    val basketId: UUID,
+) : Event<UserAggregate>(
+    name = USER_CREATE_BASKET
+)

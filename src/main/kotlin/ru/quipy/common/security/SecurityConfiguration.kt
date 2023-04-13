@@ -18,34 +18,35 @@ class SecurityConfiguration(
 ) {
 
     @Bean
-    open fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
+    fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
     @Bean
-    open fun filterChain(http: HttpSecurity): SecurityFilterChain {
+    fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
-                .cors().configurationSource {
-                    CorsConfiguration()
-                            .also { it.allowedOrigins = listOf("*") }
-                            .also { it.allowedHeaders = listOf("*") }
-                            .also { it.allowedMethods = listOf("*") }
-                }.and()
-                .csrf().disable()
-                .authorizeRequests()
-                .antMatchers(HttpMethod.POST, "/users").permitAll()
+            .cors().configurationSource {
+                CorsConfiguration()
+                    .also { it.allowedOrigins = listOf("*") }
+                    .also { it.allowedHeaders = listOf("*") }
+                    .also { it.allowedMethods = listOf("*") }
+            }.and()
+            .csrf().disable()
+            .authorizeRequests()
+            .antMatchers(HttpMethod.POST, "/users").permitAll()
 //                .antMatchers(HttpMethod.POST, "/users/admin").permitAll()
-                .antMatchers("/users/admin/*").hasAuthority("admin")
-                .antMatchers("/projects/*").permitAll()
-                .antMatchers(HttpMethod.POST, "/authentication").permitAll()
-                .antMatchers(HttpMethod.POST, "/authentication/refresh").hasAuthority("REFRESH")
-                .antMatchers("/actuator/**").permitAll()
+            .antMatchers("/users/admin/*").hasAuthority("admin")
+            .antMatchers("/projects/*").permitAll()
+            .antMatchers(HttpMethod.POST, "/authentication").permitAll()
+            .antMatchers(HttpMethod.POST, "/authentication/refresh").hasAuthority("REFRESH")
+            .antMatchers("/actuator/**").permitAll()
 //                .antMatchers("/h2-console/**").permitAll()
-                .antMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                .antMatchers(HttpMethod.OPTIONS).permitAll()
+            .antMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+            .antMatchers("/product/*").permitAll()
+            .antMatchers(HttpMethod.OPTIONS).permitAll()
 //                .anyRequest().hasAuthority("ACCESS")
-                .and()
-                .addFilterAt(authenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
-                .addFilterAfter(refreshAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
-                .headers().frameOptions().sameOrigin()
+            .and()
+            .addFilterAt(authenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterAfter(refreshAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .headers().frameOptions().sameOrigin()
         return http.build()
     }
 }
