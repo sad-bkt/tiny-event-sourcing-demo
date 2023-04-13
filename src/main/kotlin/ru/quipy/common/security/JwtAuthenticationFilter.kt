@@ -10,19 +10,23 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 @Component
-class JwtAuthenticationFilter(private val tokenManager: JwtTokenManager): OncePerRequestFilter() {
+class JwtAuthenticationFilter(private val tokenManager: JwtTokenManager) : OncePerRequestFilter() {
 
-    override fun doFilterInternal(request: HttpServletRequest,
-                                  response: HttpServletResponse,
-                                  filterChain: FilterChain) {
+    override fun doFilterInternal(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        filterChain: FilterChain
+    ) {
         val token = retrieveToken(request)
         if (token == null) {
             filterChain.doFilter(request, response)
             return
         }
         kotlin.runCatching { tokenManager.readAccessToken(token) }
-                .onSuccess { user -> SecurityContextHolder.getContext().authentication =
-                        UsernamePasswordAuthenticationToken(user, token, user.authorities) }
+            .onSuccess { user ->
+                SecurityContextHolder.getContext().authentication =
+                    UsernamePasswordAuthenticationToken(user, token, user.authorities)
+            }
         filterChain.doFilter(request, response)
     }
 }

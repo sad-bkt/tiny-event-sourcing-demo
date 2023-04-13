@@ -7,13 +7,14 @@ import org.springframework.security.core.userdetails.UserDetails
 import java.util.*
 
 data class AppUserModel(
-        val email: String,
-        val name: String,
-        val surname: String,
-        val aggregateId: UUID,
-        val role: String,
-        @JsonIgnore
-        val password: String) {
+    val email: String,
+    val name: String,
+    val surname: String,
+    val aggregateId: UUID,
+    val role: String,
+    @JsonIgnore
+    val password: String
+) {
 
-        fun userDetails(): UserDetails = User(email, password, Collections.singleton(SimpleGrantedAuthority(role)))
+    fun userDetails(): UserDetails = User(email, password, Collections.singleton(SimpleGrantedAuthority(role)))
 }

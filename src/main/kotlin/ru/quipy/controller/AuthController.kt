@@ -29,7 +29,7 @@ class AuthController(private val authService: AuthService) {
         ]
     )
     fun authenticate(@RequestBody request: AuthenticationRequest): ResponseEntity<Any> {
-        var resp : AuthenticationResult? = null
+        var resp: AuthenticationResult? = null
         kotlin.runCatching {
             resp = authService.authenticate(request)
         }.onSuccess {
@@ -48,7 +48,7 @@ class AuthController(private val authService: AuthService) {
         security = [SecurityRequirement(name = "bearerAuth")]
     )
     fun refresh(authentication: Authentication): ResponseEntity<Any> {
-        var resp : AuthenticationResult? = null
+        var resp: AuthenticationResult? = null
         kotlin.runCatching {
             resp = authService.refresh(authentication)
         }.onSuccess {

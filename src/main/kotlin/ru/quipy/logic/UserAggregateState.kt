@@ -17,7 +17,7 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
 
     var active: Boolean = true
 
-    lateinit var userData : AppUserModel
+    lateinit var userData: AppUserModel
 
 //    var items = mutableMapOf<UUID, ...>()
 
