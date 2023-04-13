@@ -7,4 +7,6 @@ import java.util.*
 interface ProductRepository : MongoRepository<ProductMongo, String> {
     @org.springframework.lang.Nullable
     fun findOneByProductId(productId: UUID): ProductMongo
+
+    override fun findAll(): List<ProductMongo>
 }
