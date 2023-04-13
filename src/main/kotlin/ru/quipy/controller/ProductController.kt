@@ -17,6 +17,10 @@ class ProductController(
     val productRepository: ProductRepository,
 ) {
 
+    @GetMapping("/getAll")
+    fun getAllProduct(): Any {
+        return productRepository.findAll()
+    }
     @GetMapping("/{productId}")
     fun getProduct(@PathVariable productId: UUID): Any {
         return productRepository.findOneByProductId(productId)
