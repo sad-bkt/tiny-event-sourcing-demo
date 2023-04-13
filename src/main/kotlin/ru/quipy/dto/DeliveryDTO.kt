@@ -5,4 +5,7 @@ import java.beans.ConstructorProperties
 
 data class DeliveryDTO
 @ConstructorProperties("status", "time")
-constructor(val status: Delivery.DeliveryStatus, val time: String)
+constructor(
+    val status: Delivery.DeliveryStatus = Delivery.DeliveryStatus.IN_DELIVERY,
+    val time: String
+)

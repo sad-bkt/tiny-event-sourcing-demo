@@ -1,6 +1,13 @@
 package ru.quipy.controller
 
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.bson.types.ObjectId
+import org.springframework.data.mongodb.core.query.Update
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -43,7 +50,7 @@ class DeliveryController(
                     DeliveryListDTO(
                         id = item.toString(),
                         status = delivery.getDeliveryStatus(),
-                        time = timeslotRepository.findOneById(ObjectId(delivery.getTimeslotId())).time
+                        time = timeslotRepository.findOneById(ObjectId(delivery.getTimeslotId()))!!.time
                     ))
             }
         return ResponseEntity<Any>(result, HttpStatus.OK)
@@ -65,7 +72,8 @@ class DeliveryController(
             ?: return ResponseEntity<Any>("User not found", HttpStatus.NOT_FOUND)
 
         val delivery = deliveryEsService.create() {  it.createNewDelivery(timeslotId = dto.time) }
-        userEsService.getState(userLogged.aggregateId)!!.addDelivery(delivery.deliveryId)
+//        userEsService.getState(userLogged.aggregateId)!!.addDelivery(delivery.deliveryId)
+        userEsService.update(userLogged.aggregateId) { it.addDelivery(delivery.deliveryId) }
         return ResponseEntity<Any>("Delivery created", HttpStatus.CREATED)
 
     }
@@ -77,8 +85,11 @@ class DeliveryController(
             ApiResponse(description = "OK", responseCode = "200", content = [Content()])
         ]
     )
-    fun cancelDelivery(@RequestBody dto: DeliveryIdDTO): Any {
-        return changeStatusDelivery(DeliveryStatusChangedDTO(dto.id, Delivery.DeliveryStatus.CANCELED))
+    fun cancelDelivery(
+        @Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
+        @RequestBody dto: DeliveryIdDTO
+    ): Any {
+        return changeStatusDelivery(DeliveryStatusChangedDTO(dto.id, Delivery.DeliveryStatus.CANCELED), user)
     }
 
     @PostMapping("/complete")
@@ -88,8 +99,11 @@ class DeliveryController(
             ApiResponse(description = "OK", responseCode = "200", content = [Content()])
         ]
     )
-    fun completeDelivery(@RequestBody dto: DeliveryIdDTO): Any {
-        return changeStatusDelivery(DeliveryStatusChangedDTO(dto.id, Delivery.DeliveryStatus.COMPLETED))
+    fun completeDelivery(
+        @Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
+        @RequestBody dto: DeliveryIdDTO
+    ): Any {
+        return changeStatusDelivery(DeliveryStatusChangedDTO(dto.id, Delivery.DeliveryStatus.COMPLETED), user)
     }
 
     @PostMapping("/change_timeslot")
@@ -111,17 +125,19 @@ class DeliveryController(
             if (item == UUID.fromString(dto.id)) {
                 if (deliveryEsService.getState(item)!!.getDeliveryStatus() == Delivery.DeliveryStatus.IN_DELIVERY) {
                     //mutexChangeSlot.lock()
-                    val newTimeslot = timeslotRepository.findOneById(ObjectId(dto.timeslotId))
-                    if (newTimeslot.busy) {
-                        //mutexChangeSlot.unlock()
-                        return ResponseEntity<Any>(null, HttpStatus.CONFLICT)
-                    }
-                    val timeslot = timeslotRepository.findOneById(ObjectId(deliveryEsService.getState(item)!!.getTimeslotId()))
-                    timeslot.busy = false
+//                    val newTimeslot = timeslotRepository.findOneById(ObjectId(dto.timeslotId)) ?: return ResponseEntity<Any>("No slot with such id", HttpStatus.NOT_FOUND)
+//                    if (newTimeslot.busy) {
+//                        //mutexChangeSlot.unlock()
+//                        return ResponseEntity<Any>(null, HttpStatus.CONFLICT)
+//                    }
+//                    val timeslot = timeslotRepository.findOneById(ObjectId(dto.timeslotId))
+//                    timeslot?.busy = false
+                    timeslotRepository.changeBusy(ObjectId(dto.timeslotId), true) ?: return ResponseEntity<Any>(null, HttpStatus.CONFLICT)
                     deliveryEsService.update(item) { it.changeDeliveryTimeslot(id = item, timeslotId = dto.timeslotId) }
 
-                    newTimeslot.busy = true
-                    timeslotRepository.save(newTimeslot)
+//                    newTimeslot.busy = true
+//                    timeslotRepository.save(newTimeslot)
+
                     //mutexChangeSlot.unlock()
                     return ResponseEntity<Any>("Can't change timeslot for order with the status not IN_DELIVERY", HttpStatus.OK)
                 }
@@ -139,8 +155,10 @@ class DeliveryController(
             ApiResponse(description = "User delivery not found", responseCode = "404", content = [Content()])
         ]
     )
-    fun changeStatusDelivery(@Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
-                             @RequestBody dto: DeliveryStatusChangedDTO)
+    fun changeStatusDelivery(
+        @RequestBody dto: DeliveryStatusChangedDTO,
+        user: UserDetails
+    )
     : ResponseEntity<Any> {
         val result = ArrayList<DeliveryListDTO>()
         val userLogged = userRepository.findOneByEmail(user.username)
@@ -156,8 +174,8 @@ class DeliveryController(
 
                             // Timeslot.findAndModify()
                             val timeslot = timeslotRepository.findOneById(ObjectId(deliveryEsService.getState(item)!!.getTimeslotId()))
-                            timeslot.busy = false
-                            timeslotRepository.save(timeslot)
+                            timeslot?.busy = false
+//                            timeslotRepository.mongoTemplate.save(timeslot)
                         }
                         else -> deliveryEsService.update(item) { it.changeDeliveryStatus(item, dto.status) }
                     }

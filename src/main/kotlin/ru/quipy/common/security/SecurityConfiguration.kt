@@ -41,6 +41,7 @@ class SecurityConfiguration(
 //                .antMatchers("/h2-console/**").permitAll()
             .antMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
             .antMatchers("/product/*").permitAll()
+            .antMatchers("/delivery/*").permitAll()
             .antMatchers(HttpMethod.OPTIONS).permitAll()
 //                .anyRequest().hasAuthority("ACCESS")
             .and()

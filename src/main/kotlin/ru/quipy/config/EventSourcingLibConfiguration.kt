@@ -4,15 +4,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import ru.quipy.api.BasketAggregate
-import ru.quipy.api.ProductAggregate
-import ru.quipy.api.ProjectAggregate
-import ru.quipy.api.UserAggregate
+import org.springframework.data.mongodb.core.MongoTemplate
+import ru.quipy.api.*
+import ru.quipy.core.EventSourcingService
 import ru.quipy.core.EventSourcingServiceFactory
-import ru.quipy.logic.BasketAggregateState
-import ru.quipy.logic.ProductAggregateState
-import ru.quipy.logic.ProjectAggregateState
-import ru.quipy.logic.UserAggregateState
+import ru.quipy.logic.*
 import ru.quipy.projections.AnnotationBasedProjectEventsSubscriber
 import ru.quipy.streams.AggregateEventStreamManager
 import ru.quipy.streams.AggregateSubscriptionsManager
@@ -73,6 +69,12 @@ class EventSourcingLibConfiguration {
 
     @Bean
     fun basketEsService() = eventSourcingServiceFactory.create<UUID, BasketAggregate, BasketAggregateState>()
+
+    @Bean
+    fun deliveryEsService(): EventSourcingService<UUID, DeliveryAggregate, Delivery> =
+        eventSourcingServiceFactory.create()
+
+
 //    @Bean
 //    fun passwordEncoder() = BCryptPasswordEncoder()
 

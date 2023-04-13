@@ -17,3 +17,4 @@ fun UserAggregateState.deleteUser(email: String): UserDeletedEvent {
 fun UserAggregateState.createBasket(basketId: UUID): UserCreateBasket{
     return UserCreateBasket(basketId)
 }
+

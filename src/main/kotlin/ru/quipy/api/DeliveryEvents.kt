@@ -43,13 +43,13 @@ data class DeliveryTimeslotChangedEvent(
     name = DELIVERY_TIMESLOT_CHANGED,
 )
 
-@DomainEvent(name = DELIVERY_ADDRESS_CHANGED)
-data class DeliveryAddressChangedEvent(
-    val deliveryId: UUID,
-    //val addressId: String
-) : Event<DeliveryAggregate>(
-    name = DELIVERY_ADDRESS_CHANGED,
-)
+//@DomainEvent(name = DELIVERY_ADDRESS_CHANGED)
+//data class DeliveryAddressChangedEvent(
+//    val deliveryId: UUID,
+//    //val addressId: String
+//) : Event<DeliveryAggregate>(
+//    name = DELIVERY_ADDRESS_CHANGED,
+//)
 
 @DomainEvent(name = DELIVERY_STATE_CHANGED)
 data class DeliveryStatusChangedEvent(
