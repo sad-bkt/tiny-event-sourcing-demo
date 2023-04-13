@@ -14,7 +14,7 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
     private lateinit var userStateId: UUID
     var createdAt: Long = System.currentTimeMillis()
     var updatedAt: Long = System.currentTimeMillis()
-
+    var deliveryIds = ArrayList<UUID>()
     var active: Boolean = true
 
     lateinit var userData : AppUserModel
@@ -22,7 +22,11 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
 //    var items = mutableMapOf<UUID, ...>()
 
     override fun getId() = userStateId
+    fun getDeliveries() = deliveryIds
 
+    fun addDelivery(uuid: UUID) {
+        deliveryIds.add(uuid)
+    }
     @StateTransitionFunc
     fun registerUserApply(event: UserCreatedEvent) {
         userStateId = event.user.aggregateId
