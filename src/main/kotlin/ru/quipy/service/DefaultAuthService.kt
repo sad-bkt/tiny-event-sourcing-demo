@@ -10,13 +10,15 @@ import org.springframework.stereotype.Service
 import org.webjars.NotFoundException
 
 @Service
-class DefaultAuthService(private val userRepository: UserRepository,
-                         private val tokenManager: JwtTokenManager,
-                         private val passwordEncoder: PasswordEncoder) : AuthService {
+class DefaultAuthService(
+    private val userRepository: UserRepository,
+    private val tokenManager: JwtTokenManager,
+    private val passwordEncoder: PasswordEncoder
+) : AuthService {
 
     override fun authenticate(request: AuthenticationRequest): AuthenticationResult {
         var user = userRepository.findOneByEmail(request.email)?.toModel()
-                ?: throw NotFoundException("User with username ${request.email} not found")
+            ?: throw NotFoundException("User with username ${request.email} not found")
 
         if (!passwordEncoder.matches(request.password, user.password))
             throw AccessDeniedException("Invalid password")

@@ -1,6 +1,9 @@
 package ru.quipy.logic
 
-import ru.quipy.api.*
+import ru.quipy.api.ProductAggregate
+import ru.quipy.api.ProductCreatedEvent
+import ru.quipy.api.ProductDeleteEvent
+import ru.quipy.api.ProductUpdateEvent
 import ru.quipy.core.annotations.StateTransitionFunc
 import ru.quipy.domain.AggregateState
 import java.util.*
@@ -27,9 +30,12 @@ class ProductAggregateState : AggregateState<UUID, ProductAggregate> {
 
     @StateTransitionFunc
     fun productUpdate(event: ProductUpdateEvent) {
-        productId = event.productId
-        productName = event.productName
         count = event.count
+    }
+
+    @StateTransitionFunc
+    fun productDelete(event: ProductDeleteEvent) {
+        productId = event.productId
     }
 }
 

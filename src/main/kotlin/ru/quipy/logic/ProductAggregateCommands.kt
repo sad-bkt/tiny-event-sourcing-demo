@@ -1,6 +1,8 @@
 package ru.quipy.logic
 
-import ru.quipy.api.*
+import ru.quipy.api.ProductCreatedEvent
+import ru.quipy.api.ProductDeleteEvent
+import ru.quipy.api.ProductUpdateEvent
 import java.util.*
 
 
@@ -15,10 +17,14 @@ fun ProductAggregateState.create(id: UUID, name: String, cnt: Int): ProductCreat
     )
 }
 
-fun ProductAggregateState.update(id: UUID, name: String, cnt: Int): ProductUpdateEvent {
+fun ProductAggregateState.updateCount(cnt: Int): ProductUpdateEvent {
     return ProductUpdateEvent(
-        productId = id,
-        productName = name,
         count = cnt,
+    )
+}
+
+fun ProductAggregateState.delete(productId: UUID): ProductDeleteEvent {
+    return ProductDeleteEvent(
+        productId = productId,
     )
 }

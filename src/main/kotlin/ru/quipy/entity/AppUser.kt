@@ -2,7 +2,6 @@ package ru.quipy.entity
 
 import com.itmo.microservices.demo.users.api.model.AppUserModel
 import org.springframework.data.mongodb.core.mapping.Document
-import org.springframework.data.mongodb.core.mapping.FieldType
 import org.springframework.data.mongodb.core.mapping.MongoId
 import java.util.*
 
@@ -21,14 +20,14 @@ class AppUser(
         AppUserModel(
             name = this.name!!,
             surname = this.surname!!,
-            email = this.email!!,
+            email = this.email,
             password = this.password!!,
-            aggregateId = this.aggregateId!!,
-            role = this.role!!
+            aggregateId = this.aggregateId,
+            role = this.role
         )
     }.getOrElse { exception -> throw IllegalStateException("Some of user fields are null", exception) }
 
     override fun toString(): String {
-        return "{ email: $email, aggregateId: ${aggregateId.toString()}, role: $role}"
+        return "{ email: $email, aggregateId: $aggregateId, role: $role}"
     }
 }
