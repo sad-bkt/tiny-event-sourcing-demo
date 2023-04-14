@@ -122,8 +122,8 @@ class DeliveryController(
         )
 
         for (item in basket.entries.iterator()) {
-            val itemCountInDelivery = min(item.value, productRepository.findOneByProductId(item.key).productCount)
-            productEsService.update(item.key) { it.updateCount(productRepository.findOneByProductId(item.key).productCount - itemCountInDelivery) }
+            val itemCountInDelivery = min(item.value, productRepository.findOneByProductId(item.key)!!.productCount)
+            productEsService.update(item.key) { it.updateCount(productRepository.findOneByProductId(item.key)!!.productCount - itemCountInDelivery) }
             item.setValue(itemCountInDelivery)
         }
         val delivery = deliveryEsService.create {
@@ -152,7 +152,7 @@ class DeliveryController(
             ?: return ResponseEntity<Any>("Delivery doesn't have basket", HttpStatus.NOT_FOUND)
 
         for (item in basket.entries.iterator()) {
-            val itemCount = item.value + productRepository.findOneByProductId(item.key).productCount
+            val itemCount = item.value + productRepository.findOneByProductId(item.key)!!.productCount
             productEsService.update(item.key) { it.updateCount(itemCount) }
         }
 

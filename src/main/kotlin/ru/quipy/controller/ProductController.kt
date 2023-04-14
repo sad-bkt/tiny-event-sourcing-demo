@@ -23,14 +23,14 @@ class ProductController(
     }
 
     @GetMapping("/{productId}")
-    fun getProduct(@PathVariable productId: UUID): Any {
+    fun getProduct(@PathVariable productId: UUID): ProductMongo? {
         return productRepository.findOneByProductId(productId)
     }
 
     @PostMapping("/create")
     fun createProduct(@RequestBody productDto: ProductDTO): Any {
         val product = productEsService.create { it.create(UUID.randomUUID(), productDto.name, productDto.count) }
-        return productRepository.save(
+        return productRepository.create(
             ProductMongo(
                 productId = product.productId,
                 productName = product.productName,

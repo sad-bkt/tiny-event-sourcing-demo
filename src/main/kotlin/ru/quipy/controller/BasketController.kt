@@ -4,24 +4,20 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
 import ru.quipy.api.BasketAggregate
-import ru.quipy.api.ProductAggregate
 import ru.quipy.api.UserAggregate
 import ru.quipy.core.EventSourcingService
 import ru.quipy.dto.ListProductDTO
 import ru.quipy.entity.BasketMongo
 import ru.quipy.logic.*
 import ru.quipy.service.BasketRepository
-import ru.quipy.service.ProductRepository
 import ru.quipy.service.UserRepository
 import java.util.*
 
 @RestController
 @RequestMapping("/basket")
 class BasketController(
-    val productEsService: EventSourcingService<UUID, ProductAggregate, ProductAggregateState>,
     val userEsService: EventSourcingService<UUID, UserAggregate, UserAggregateState>,
     val basketEsService: EventSourcingService<UUID, BasketAggregate, BasketAggregateState>,
-    val productRepository: ProductRepository,
     val basketRepository: BasketRepository,
     val userRepository: UserRepository,
 ) {
