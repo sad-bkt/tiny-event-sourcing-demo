@@ -4,7 +4,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.data.mongodb.core.MongoTemplate
 import ru.quipy.api.*
 import ru.quipy.core.EventSourcingService
 import ru.quipy.core.EventSourcingServiceFactory

@@ -4,14 +4,14 @@ import ru.quipy.api.*
 import ru.quipy.core.annotations.StateTransitionFunc
 import ru.quipy.domain.AggregateState
 import java.util.*
-import kotlin.collections.mutableMapOf
 
 
 class BasketAggregateState : AggregateState<UUID, BasketAggregate> {
     private var basket: MutableMap<UUID, Int> = mutableMapOf()
     private lateinit var basketId: UUID
-//    private var count: List<Int>
-    fun getBasket() : MutableMap<UUID, Int>{
+
+    //    private var count: List<Int>
+    fun getBasket(): MutableMap<UUID, Int> {
         return basket
     }
 

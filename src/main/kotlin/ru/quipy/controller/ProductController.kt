@@ -5,8 +5,8 @@ import ru.quipy.api.ProductAggregate
 import ru.quipy.core.EventSourcingService
 import ru.quipy.dto.ProductCountDTO
 import ru.quipy.dto.ProductDTO
-import ru.quipy.logic.*
 import ru.quipy.entity.ProductMongo
+import ru.quipy.logic.*
 import ru.quipy.service.ProductRepository
 import java.util.*
 
@@ -21,6 +21,7 @@ class ProductController(
     fun getAllProduct(): Any {
         return productRepository.findAll()
     }
+
     @GetMapping("/{productId}")
     fun getProduct(@PathVariable productId: UUID): Any {
         return productRepository.findOneByProductId(productId)
@@ -40,12 +41,12 @@ class ProductController(
 
     @PostMapping("/updateCount")
     fun updateProduct(@RequestParam id: UUID, @RequestBody productCountDto: ProductCountDTO): Any {
-        return productEsService.update(id){it.updateCount(productCountDto.count) }
+        return productEsService.update(id) { it.updateCount(productCountDto.count) }
     }
 
     @PostMapping("/delete")
     fun deleteProduct(@RequestParam id: UUID): Any {
-        return productEsService.update(id){it.delete(id) }
+        return productEsService.update(id) { it.delete(id) }
     }
 
 }

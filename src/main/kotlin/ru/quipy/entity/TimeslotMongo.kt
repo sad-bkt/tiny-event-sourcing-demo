@@ -1,6 +1,5 @@
 package ru.quipy.entity
 
-import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
 import ru.quipy.model.TimeslotModel

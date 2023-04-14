@@ -12,7 +12,7 @@ fun UserAggregateState.deleteUser(email: String): UserDeletedEvent {
     return UserDeletedEvent(email)
 }
 
-fun UserAggregateState.createBasket(basketId: UUID): UserCreateBasket{
+fun UserAggregateState.createBasket(basketId: UUID): UserCreateBasket {
     return UserCreateBasket(basketId)
 }
 
