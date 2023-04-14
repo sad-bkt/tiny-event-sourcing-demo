@@ -11,8 +11,9 @@ class BasketAggregateState : AggregateState<UUID, BasketAggregate> {
     private var basket: MutableMap<UUID, Int> = mutableMapOf()
     private lateinit var basketId: UUID
 //    private var count: List<Int>
-
-    fun getBasket() = basket
+    fun getBasket() : MutableMap<UUID, Int>{
+        return basket
+    }
 
     @StateTransitionFunc
     fun basketCreate(event: BasketCreateEvent) {

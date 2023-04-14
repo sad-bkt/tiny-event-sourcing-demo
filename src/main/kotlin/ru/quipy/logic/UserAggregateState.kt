@@ -47,6 +47,15 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
     }
 
     @StateTransitionFunc
+    fun deleteBasketUserApply(event: UserDeleteBasket) {
+        val field = this.javaClass.getDeclaredField("basketId")
+
+        with (field) {
+            isAccessible = true
+            set(this, null)
+        }
+    }
+    @StateTransitionFunc
     fun createDeliveryUserApply(event: UserDeliveryCreatedEvent) {
         deliveryIds.add(event.deliveryId)
     }

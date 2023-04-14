@@ -15,7 +15,8 @@ const val DELIVERY_STATE_CHANGED = "DELIVERY_STATE_CHANGED"
 @DomainEvent(name = DELIVERY_CREATED)
 data class DeliveryCreatedEvent(
     val deliveryId: UUID,
-    val timeslotId: String,
+    val timeslotId: UUID,
+    val basketId: UUID,
     //val addressId: String,
 ) : Event<DeliveryAggregate>(
     name = DELIVERY_CREATED,
@@ -38,7 +39,7 @@ data class DeliveryCompletedEvent(
 @DomainEvent(name = DELIVERY_TIMESLOT_CHANGED)
 data class DeliveryTimeslotChangedEvent(
     val deliveryId: UUID,
-    val timeslotId: String
+    val timeslotId: UUID
 ) : Event<DeliveryAggregate>(
     name = DELIVERY_TIMESLOT_CHANGED,
 )

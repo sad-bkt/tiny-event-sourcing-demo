@@ -49,7 +49,7 @@ class BasketController(
         val id = userRepository.findOneByEmail(user.username)!!.aggregateId
         basketCreateOrPass(id)
         val basketId = userEsService.getState(id)!!.getBasketId()
-        basketEsService.update(basketId){ it.addProduct(listProductDTO.productId, listProductDTO.count) }
+        basketEsService.update(basketId){ it.addProduct(UUID.fromString(listProductDTO.productId), listProductDTO.count) }
         return basketEsService.getState(basketId)?.getBasket()
     }
 
@@ -58,7 +58,7 @@ class BasketController(
         val id = userRepository.findOneByEmail(user.username)!!.aggregateId
         basketCreateOrPass(id)
         val basketId = userEsService.getState(id)!!.getBasketId()
-        basketEsService.update(basketId){ it.changeCount(listProductDTO.productId, listProductDTO.count) }
+        basketEsService.update(basketId){ it.changeCount(UUID.fromString(listProductDTO.productId), listProductDTO.count) }
         return basketEsService.getState(basketId)?.getBasket()
     }
 

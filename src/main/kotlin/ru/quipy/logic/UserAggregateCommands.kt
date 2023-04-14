@@ -20,3 +20,7 @@ fun UserAggregateState.addDelivery(deliveryId: UUID): UserDeliveryCreatedEvent {
     return UserDeliveryCreatedEvent(deliveryId)
 }
 
+fun UserAggregateState.deleteUserBasket(): UserDeleteBasket {
+    return UserDeleteBasket()
+}
+

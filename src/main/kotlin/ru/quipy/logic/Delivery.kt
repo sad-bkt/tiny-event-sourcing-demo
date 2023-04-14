@@ -7,16 +7,18 @@ import java.util.*
 
 class Delivery : AggregateState<UUID, DeliveryAggregate> {
     private lateinit var deliveryId: UUID
-    private lateinit var timeslotId: String
+    private lateinit var timeslotId: UUID
     private lateinit var addressId: String
     private lateinit var deliveryStatus: DeliveryStatus
-
+    // private var basket: MutableMap<UUID, Int> = mutableMapOf()
+    private lateinit var basketId: UUID
     enum class DeliveryStatus {
         IN_DELIVERY,
         COMPLETED,
         CANCELED
     }
 
+    fun getBasketId() = basketId
     override fun getId() = deliveryId
 
     fun getDeliveryStatus() = deliveryStatus
@@ -25,8 +27,8 @@ class Delivery : AggregateState<UUID, DeliveryAggregate> {
 
     fun getAddressId() = addressId
 
-    fun createNewDelivery(id: UUID = UUID.randomUUID(), timeslotId: String) : DeliveryCreatedEvent {
-        return DeliveryCreatedEvent(deliveryId = id, timeslotId = timeslotId)
+    fun createNewDelivery(id: UUID = UUID.randomUUID(), timeslotId: UUID, basketId: UUID) : DeliveryCreatedEvent {
+        return DeliveryCreatedEvent(deliveryId = id, timeslotId = timeslotId, basketId = basketId)
     }
 
     fun cancelDelivery(id: UUID) : DeliveryCanceledEvent {
@@ -37,7 +39,7 @@ class Delivery : AggregateState<UUID, DeliveryAggregate> {
         return DeliveryCompletedEvent(deliveryId = id)
     }
 
-    fun changeDeliveryTimeslot(id: UUID, timeslotId: String) : DeliveryTimeslotChangedEvent {
+    fun changeDeliveryTimeslot(id: UUID, timeslotId: UUID) : DeliveryTimeslotChangedEvent {
         return DeliveryTimeslotChangedEvent(deliveryId = id, timeslotId = timeslotId)
     }
 
@@ -54,6 +56,7 @@ class Delivery : AggregateState<UUID, DeliveryAggregate> {
         deliveryId = event.deliveryId
         timeslotId = event.timeslotId
         deliveryStatus = DeliveryStatus.IN_DELIVERY
+        basketId = event.basketId
     }
 
     @StateTransitionFunc

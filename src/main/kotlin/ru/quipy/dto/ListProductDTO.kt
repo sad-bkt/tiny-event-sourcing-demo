@@ -5,4 +5,4 @@ import java.util.*
 
 data class ListProductDTO
 @ConstructorProperties("productId", "count")
-constructor(val productId: UUID, val count: Int)
+constructor(val productId: String, val count: Int)

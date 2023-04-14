@@ -18,13 +18,13 @@ import java.util.*
 @Repository
 public class TimeslotRepository(val mongoTemplate: MongoTemplate) {
 
-    fun findOneById(id: ObjectId): TimeslotMongo? {
+    fun findOneById(id: UUID): TimeslotMongo? {
         val query = Query();
         query.addCriteria(Criteria.where("id").isEqualTo(id));
         return mongoTemplate.findOne(query)
     }
 
-    fun changeBusy(id: ObjectId, busy: Boolean): TimeslotMongo? {
+    fun changeBusy(id: UUID, busy: Boolean): TimeslotMongo? {
         val query = Query()
         query.addCriteria(Criteria.where("id").isEqualTo(id).and("busy").isEqualTo(!busy))
         val update: Update = Update().set("busy", busy)
