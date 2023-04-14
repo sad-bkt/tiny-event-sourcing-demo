@@ -8,7 +8,7 @@ import java.util.*
 const val I_USER_CREATED_EVENT = "I_USER_CREATED_EVENT"
 const val I_USER_DELETED_EVENT = "I_USER_DELETED_EVENT"
 const val USER_CREATE_BASKET = "USER_CREATE_BASKET"
-
+const val USER_DELIVERY_CREATED_EVENT = "USER_DELIVERY_CREATED_EVENT"
 @DomainEvent(name = I_USER_CREATED_EVENT)
 class UserCreatedEvent(
     val user: AppUser,
@@ -32,4 +32,11 @@ class UserCreateBasket(
     val basketId: UUID,
 ) : Event<UserAggregate>(
     name = USER_CREATE_BASKET
+)
+
+@DomainEvent(name = USER_DELIVERY_CREATED_EVENT)
+class UserDeliveryCreatedEvent(
+    val deliveryId: UUID
+) : Event<UserAggregate>(
+    name = USER_DELIVERY_CREATED_EVENT
 )

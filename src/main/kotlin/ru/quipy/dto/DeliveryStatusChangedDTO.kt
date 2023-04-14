@@ -4,5 +4,5 @@ import ru.quipy.logic.Delivery
 import java.beans.ConstructorProperties
 
 data class DeliveryStatusChangedDTO
-@ConstructorProperties("id", "status")
-constructor(val id: String, val status: Delivery.DeliveryStatus)
+@ConstructorProperties("deliveryId", "status")
+constructor(val deliveryId: String, val status: Delivery.DeliveryStatus)

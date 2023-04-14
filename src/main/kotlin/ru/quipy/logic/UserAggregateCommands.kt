@@ -1,8 +1,6 @@
 package ru.quipy.logic
 
-import ru.quipy.api.UserCreateBasket
-import ru.quipy.api.UserCreatedEvent
-import ru.quipy.api.UserDeletedEvent
+import ru.quipy.api.*
 import ru.quipy.entity.AppUser
 import java.util.*
 
@@ -16,5 +14,9 @@ fun UserAggregateState.deleteUser(email: String): UserDeletedEvent {
 
 fun UserAggregateState.createBasket(basketId: UUID): UserCreateBasket{
     return UserCreateBasket(basketId)
+}
+
+fun UserAggregateState.addDelivery(deliveryId: UUID): UserDeliveryCreatedEvent {
+    return UserDeliveryCreatedEvent(deliveryId)
 }
 

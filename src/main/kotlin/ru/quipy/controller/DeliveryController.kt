@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.bson.types.ObjectId
-import org.springframework.data.mongodb.core.query.Update
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -15,9 +14,10 @@ import ru.quipy.api.DeliveryAggregate
 import ru.quipy.api.UserAggregate
 import ru.quipy.core.EventSourcingService
 import ru.quipy.dto.*
-import ru.quipy.entity.Timeslot
+import ru.quipy.entity.TimeslotMongo
 import ru.quipy.logic.Delivery
 import ru.quipy.logic.UserAggregateState
+import ru.quipy.logic.addDelivery
 import ru.quipy.service.TimeslotRepository
 import ru.quipy.service.UserRepository
 import java.util.*
@@ -48,7 +48,7 @@ class DeliveryController(
                 val delivery = deliveryEsService.getState(item)!!
                 result.add(
                     DeliveryListDTO(
-                        id = item.toString(),
+                        deliveryId = item.toString(),
                         status = delivery.getDeliveryStatus(),
                         time = timeslotRepository.findOneById(ObjectId(delivery.getTimeslotId()))!!.time
                     ))
@@ -56,6 +56,26 @@ class DeliveryController(
         return ResponseEntity<Any>(result, HttpStatus.OK)
     }
 
+    @PostMapping("/create_timeslot")
+    @Operation(
+        summary = "Create new timeslot",
+        responses = [
+            ApiResponse(description = "Created", responseCode = "201", content = [Content()])
+        ]
+    )
+    fun createDeliveryTimeslot(@RequestBody time: String): ResponseEntity<Any> {
+        val id = UUID.randomUUID()
+        timeslotRepository.create(
+            TimeslotMongo(
+                id = id,
+                time = time,
+                busy = false,
+            )
+        )
+
+        return ResponseEntity<Any>("Delivery timeslot with id = $id created", HttpStatus.CREATED)
+
+    }
     @PostMapping("/create")
     @Operation(
         summary = "Create new delivery",
@@ -67,15 +87,13 @@ class DeliveryController(
     fun createDelivery(@Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
                        @RequestBody dto: DeliveryDTO
     ): ResponseEntity<Any> {
-        val result = ArrayList<DeliveryListDTO>()
         val userLogged = userRepository.findOneByEmail(user.username)
             ?: return ResponseEntity<Any>("User not found", HttpStatus.NOT_FOUND)
 
-        val delivery = deliveryEsService.create() {  it.createNewDelivery(timeslotId = dto.time) }
-//        userEsService.getState(userLogged.aggregateId)!!.addDelivery(delivery.deliveryId)
+        val delivery = deliveryEsService.create() {  it.createNewDelivery(timeslotId = dto.timeslotId) }
+        // userEsService.getState(userLogged.aggregateId)!!.addDelivery(delivery.deliveryId)
         userEsService.update(userLogged.aggregateId) { it.addDelivery(delivery.deliveryId) }
         return ResponseEntity<Any>("Delivery created", HttpStatus.CREATED)
-
     }
 
     @PostMapping("/cancel")
@@ -89,7 +107,7 @@ class DeliveryController(
         @Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
         @RequestBody dto: DeliveryIdDTO
     ): Any {
-        return changeStatusDelivery(DeliveryStatusChangedDTO(dto.id, Delivery.DeliveryStatus.CANCELED), user)
+        return changeStatusDelivery(DeliveryStatusChangedDTO(dto.deliveryId, Delivery.DeliveryStatus.CANCELED), user)
     }
 
     @PostMapping("/complete")
@@ -103,7 +121,7 @@ class DeliveryController(
         @Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
         @RequestBody dto: DeliveryIdDTO
     ): Any {
-        return changeStatusDelivery(DeliveryStatusChangedDTO(dto.id, Delivery.DeliveryStatus.COMPLETED), user)
+        return changeStatusDelivery(DeliveryStatusChangedDTO(dto.deliveryId, Delivery.DeliveryStatus.COMPLETED), user)
     }
 
     @PostMapping("/change_timeslot")
@@ -117,12 +135,11 @@ class DeliveryController(
     )
     fun changeDeliveryTimeslot(@Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
                                @RequestBody dto: DeliveryTimeslotChangedDTO): ResponseEntity<Any> {
-        val result = ArrayList<DeliveryListDTO>()
         val userLogged = userRepository.findOneByEmail(user.username)
             ?: return ResponseEntity<Any>("User not found", HttpStatus.NOT_FOUND)
 
         for (item in userEsService.getState(userLogged.aggregateId)!!.getDeliveries()) {
-            if (item == UUID.fromString(dto.id)) {
+            if (item == UUID.fromString(dto.deliveryId)) {
                 if (deliveryEsService.getState(item)!!.getDeliveryStatus() == Delivery.DeliveryStatus.IN_DELIVERY) {
                     //mutexChangeSlot.lock()
 //                    val newTimeslot = timeslotRepository.findOneById(ObjectId(dto.timeslotId)) ?: return ResponseEntity<Any>("No slot with such id", HttpStatus.NOT_FOUND)
@@ -139,7 +156,7 @@ class DeliveryController(
 //                    timeslotRepository.save(newTimeslot)
 
                     //mutexChangeSlot.unlock()
-                    return ResponseEntity<Any>("Can't change timeslot for order with the status not IN_DELIVERY", HttpStatus.OK)
+                    return ResponseEntity<Any>("Delivery timeslot updated", HttpStatus.OK)
                 }
                 return ResponseEntity<Any>("Can't change timeslot for order with the status not IN_DELIVERY", HttpStatus.BAD_REQUEST)
             }
@@ -160,12 +177,11 @@ class DeliveryController(
         user: UserDetails
     )
     : ResponseEntity<Any> {
-        val result = ArrayList<DeliveryListDTO>()
         val userLogged = userRepository.findOneByEmail(user.username)
             ?: return ResponseEntity<Any>("User not found", HttpStatus.NOT_FOUND)
 
         for (item in userEsService.getState(userLogged.aggregateId)!!.getDeliveries()) {
-            if (item == UUID.fromString(dto.id)) {
+            if (item == UUID.fromString(dto.deliveryId)) {
                 val status = deliveryEsService.getState(item)!!.getDeliveryStatus()
                 if (status != dto.status) {
                     when (dto.status) {

@@ -4,8 +4,8 @@ import ru.quipy.logic.Delivery
 import java.beans.ConstructorProperties
 
 data class DeliveryDTO
-@ConstructorProperties("status", "time")
+@ConstructorProperties("timeslotId")
 constructor(
-    val status: Delivery.DeliveryStatus = Delivery.DeliveryStatus.IN_DELIVERY,
-    val time: String
+    //val status: Delivery.DeliveryStatus = Delivery.DeliveryStatus.IN_DELIVERY,
+    val timeslotId: String
 )

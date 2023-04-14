@@ -1,6 +1,5 @@
 package ru.quipy.logic
 
-import org.bson.types.ObjectId
 import ru.quipy.core.annotations.StateTransitionFunc
 import ru.quipy.domain.AggregateState
 import ru.quipy.api.*
@@ -10,7 +9,7 @@ class Delivery : AggregateState<UUID, DeliveryAggregate> {
     private lateinit var deliveryId: UUID
     private lateinit var timeslotId: String
     private lateinit var addressId: String
-    private lateinit var deliveryState: DeliveryStatus
+    private lateinit var deliveryStatus: DeliveryStatus
 
     enum class DeliveryStatus {
         IN_DELIVERY,
@@ -20,7 +19,7 @@ class Delivery : AggregateState<UUID, DeliveryAggregate> {
 
     override fun getId() = deliveryId
 
-    fun getDeliveryStatus() = deliveryState
+    fun getDeliveryStatus() = deliveryStatus
 
     fun getTimeslotId() = timeslotId
 
@@ -54,19 +53,19 @@ class Delivery : AggregateState<UUID, DeliveryAggregate> {
     fun createNewDelivery(event: DeliveryCreatedEvent) {
         deliveryId = event.deliveryId
         timeslotId = event.timeslotId
-        deliveryState = DeliveryStatus.IN_DELIVERY
+        deliveryStatus = DeliveryStatus.IN_DELIVERY
     }
 
     @StateTransitionFunc
     fun cancelDelivery(event: DeliveryCanceledEvent) {
         deliveryId = event.deliveryId
-        deliveryState = DeliveryStatus.CANCELED
+        deliveryStatus = DeliveryStatus.CANCELED
     }
 
     @StateTransitionFunc
     fun completeDelivery(event: DeliveryCompletedEvent) {
         deliveryId = event.deliveryId
-        deliveryState = DeliveryStatus.COMPLETED
+        deliveryStatus = DeliveryStatus.COMPLETED
     }
 
     @StateTransitionFunc
@@ -84,6 +83,6 @@ class Delivery : AggregateState<UUID, DeliveryAggregate> {
     @StateTransitionFunc
     fun changeDeliveryStatus(event: DeliveryStatusChangedEvent) {
         deliveryId = event.deliveryId
-        deliveryState = event.status
+        deliveryStatus = event.status
     }
 }

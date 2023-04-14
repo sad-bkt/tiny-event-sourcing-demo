@@ -2,10 +2,7 @@ package ru.quipy.logic
 
 import com.itmo.microservices.demo.users.api.model.AppUserModel
 import org.springframework.stereotype.Component
-import ru.quipy.api.UserAggregate
-import ru.quipy.api.UserCreateBasket
-import ru.quipy.api.UserCreatedEvent
-import ru.quipy.api.UserDeletedEvent
+import ru.quipy.api.*
 import ru.quipy.core.annotations.StateTransitionFunc
 import ru.quipy.domain.AggregateState
 import java.util.*
@@ -27,9 +24,6 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
     override fun getId() = userStateId
     fun getDeliveries() = deliveryIds
 
-    fun addDelivery(uuid: UUID) {
-        deliveryIds.add(uuid)
-    }
     fun getBasketId() = basketId
 
     fun existBasket(): Boolean {
@@ -50,5 +44,10 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
     @StateTransitionFunc
     fun createBasketUserApply(event: UserCreateBasket) {
         basketId = event.basketId
+    }
+
+    @StateTransitionFunc
+    fun createDeliveryUserApply(event: UserDeliveryCreatedEvent) {
+        deliveryIds.add(event.deliveryId)
     }
 }

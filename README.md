@@ -1,4 +1,10 @@
+# Shop backend with Tiny Event Sourcing library
+
+Check correctness via
+[Postman collection with requests](https://www.postman.com/lsvwu/workspace/demo/collection/23609182-84a89147-d7ab-4f69-ae5a-d88919589cba?action=share&creator=23609182&ctx=documentation)
+
 # Tiny event sourcing library demo
+
 This project demonstrates how easily you can build your event-driven, event sourcing based application POC in 15 minutes
 using [Tiny Event Sourcing library](https://github.com/andrsuh/tiny-event-sourcing)
 
