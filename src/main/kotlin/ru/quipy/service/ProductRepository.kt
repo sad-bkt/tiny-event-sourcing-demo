@@ -1,9 +1,7 @@
 package ru.quipy.service
 
-import com.mongodb.client.result.DeleteResult
 import org.springframework.data.mongodb.core.FindAndModifyOptions
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.findAndRemove
 import org.springframework.data.mongodb.core.findOne
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
@@ -11,7 +9,6 @@ import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.mongodb.core.query.isEqualTo
 import org.springframework.stereotype.Repository
 import ru.quipy.entity.ProductMongo
-import ru.quipy.entity.TimeslotMongo
 import java.util.*
 
 @Repository
@@ -39,7 +36,7 @@ class ProductRepository(val mongoTemplate: MongoTemplate) {
 
     fun changeCount(id: UUID, expectedCount: Int, updatedCount: Int): ProductMongo? {
         val query = Query()
-        query.addCriteria(Criteria.where("id").isEqualTo(id).and("productCount").isEqualTo(expectedCount))
+        query.addCriteria(Criteria.where("productId").isEqualTo(id).and("productCount").isEqualTo(expectedCount))
         val update: Update = Update().set("productCount", updatedCount)
         return mongoTemplate.findAndModify(
             query,

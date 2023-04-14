@@ -15,6 +15,10 @@ class BasketAggregateState : AggregateState<UUID, BasketAggregate> {
         return basket
     }
 
+    fun existProduct(productId: UUID): Boolean {
+        return basket.containsKey(productId)
+    }
+
     @StateTransitionFunc
     fun basketCreate(event: BasketCreateEvent) {
         basketId = event.basketId

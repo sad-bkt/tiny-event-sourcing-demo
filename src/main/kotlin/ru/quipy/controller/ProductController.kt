@@ -20,42 +20,47 @@ class ProductController(
 ) {
 
     @GetMapping("/getAll")
-    fun getAllProduct(): Any {
-        return productRepository.findAll()
+    fun getAllProduct(): ResponseEntity<Any> {
+        return ResponseEntity<Any>(productRepository.findAll(), HttpStatus.OK)
     }
 
     @GetMapping("/{productId}")
-    fun getProduct(@PathVariable productId: UUID): ProductMongo? {
-        return productRepository.findOneByProductId(productId)
+    fun getProduct(@PathVariable productId: UUID): ResponseEntity<Any> {
+        return ResponseEntity<Any>(productRepository.findOneByProductId(productId), HttpStatus.OK)
     }
 
     @PostMapping("/create")
-    fun createProduct(@RequestBody productDto: ProductDTO): Any {
+    fun createProduct(@RequestBody productDto: ProductDTO): ResponseEntity<Any> {
         val product = productEsService.create { it.create(UUID.randomUUID(), productDto.name, productDto.count) }
-        return productRepository.create(
-            ProductMongo(
-                productId = product.productId,
-                productName = product.productName,
-                productCount = product.count
-            )
+        return ResponseEntity<Any>(
+            productRepository.create(
+                ProductMongo(
+                    productId = product.productId,
+                    productName = product.productName,
+                    productCount = product.count
+                )
+            ), HttpStatus.OK
         )
     }
 
     @PostMapping("/updateCount")
     fun updateProduct(@RequestParam id: UUID, @RequestBody productCountDto: ProductCountDTO): ResponseEntity<Any> {
+        if (productCountDto.count < 0) {
+            return ResponseEntity<Any>("Count of the product cannot be negative", HttpStatus.BAD_REQUEST)
+        }
         var tryChangeCount: ProductMongo? = null
         while (tryChangeCount == null) {
-            val product = productRepository.findOneByProductId(id) ?:
-                return ResponseEntity<Any>("Product with id $id was not found", HttpStatus.NOT_FOUND)
+            val product = productRepository.findOneByProductId(id)
+                ?: return ResponseEntity<Any>("Product with id $id was not found", HttpStatus.NOT_FOUND)
             tryChangeCount = productRepository.changeCount(id, product.productCount, productCountDto.count)
         }
         return ResponseEntity<Any>(productEsService.update(id) { it.updateCount(productCountDto.count) }, HttpStatus.OK)
     }
 
     @PostMapping("/delete")
-    fun deleteProduct(@RequestParam id: UUID): Any {
+    fun deleteProduct(@RequestParam id: UUID): ResponseEntity<Any> {
         productRepository.delete(id)
-        return productEsService.update(id) { it.delete(id) }
+        return ResponseEntity<Any>(productEsService.update(id) { it.delete(id) }, HttpStatus.OK)
     }
 
 }

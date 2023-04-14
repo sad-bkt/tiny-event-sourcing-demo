@@ -1,12 +1,14 @@
 package ru.quipy.controller
 
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
 import ru.quipy.api.BasketAggregate
 import ru.quipy.api.UserAggregate
 import ru.quipy.core.EventSourcingService
-import ru.quipy.dto.ListProductDTO
+import ru.quipy.dto.ProductCountDTO
 import ru.quipy.entity.BasketMongo
 import ru.quipy.logic.*
 import ru.quipy.service.BasketRepository
@@ -39,56 +41,65 @@ class BasketController(
 
     @PostMapping("/addProduct")
     fun addProduct(
-        @RequestBody listProductDTO: ListProductDTO,
+        @RequestBody productCountDTO: ProductCountDTO,
         @AuthenticationPrincipal user: UserDetails
-    ): MutableMap<UUID, Int>? {
-        val id = userRepository.findOneByEmail(user.username)!!.aggregateId
+    ): ResponseEntity<Any> {
+        val id = userRepository.findOneByEmail(user.username)?.aggregateId
+            ?: return ResponseEntity<Any>("The user is not logged in", HttpStatus.BAD_REQUEST)
         basketCreateOrPass(id)
         val basketId = userEsService.getState(id)!!.getBasketId()
         basketEsService.update(basketId) {
             it.addProduct(
-                UUID.fromString(listProductDTO.productId),
-                listProductDTO.count
+                productCountDTO.productId,
+                productCountDTO.count
             )
         }
-        return basketEsService.getState(basketId)?.getBasket()
+        return ResponseEntity<Any>(basketEsService.getState(basketId)?.getBasket(), HttpStatus.OK)
     }
 
     @PostMapping("/updateCount")
     fun updateProductCount(
-        @RequestBody listProductDTO: ListProductDTO,
+        @RequestBody productCountDTO: ProductCountDTO,
         @AuthenticationPrincipal user: UserDetails
-    ): MutableMap<UUID, Int>? {
-        val id = userRepository.findOneByEmail(user.username)!!.aggregateId
+    ): ResponseEntity<Any> {
+        val id = userRepository.findOneByEmail(user.username)?.aggregateId
+            ?: return ResponseEntity<Any>("The user is not logged in", HttpStatus.BAD_REQUEST)
         basketCreateOrPass(id)
         val basketId = userEsService.getState(id)!!.getBasketId()
+        if (!basketEsService.getState(basketId)?.existProduct(productCountDTO.productId)!!)
+            return ResponseEntity<Any>("The product does not exist in the basket", HttpStatus.BAD_REQUEST)
         basketEsService.update(basketId) {
             it.changeCount(
-                UUID.fromString(listProductDTO.productId),
-                listProductDTO.count
+                productCountDTO.productId,
+                productCountDTO.count
             )
         }
-        return basketEsService.getState(basketId)?.getBasket()
+        return ResponseEntity<Any>(basketEsService.getState(basketId)?.getBasket(), HttpStatus.OK)
     }
 
     @PostMapping("/deleteProduct")
     fun deleteProduct(
-        @RequestBody productId: UUID,
+        @RequestParam productId: UUID,
         @AuthenticationPrincipal user: UserDetails
-    ): MutableMap<UUID, Int>? {
-        val id = userRepository.findOneByEmail(user.username)!!.aggregateId
-        basketCreateOrPass(id)
-        val basketId = userEsService.getState(id)!!.getBasketId()
+    ): ResponseEntity<Any> {
+        val id = userRepository.findOneByEmail(user.username)?.aggregateId
+            ?: return ResponseEntity<Any>("The user is not logged in", HttpStatus.BAD_REQUEST)
+        val basketId = userEsService.getState(id)?.getBasketId()
+            ?: return ResponseEntity<Any>("The shopping cart does not exist for the user", HttpStatus.BAD_REQUEST)
+        if (!basketEsService.getState(basketId)?.existProduct(productId)!!)
+            return ResponseEntity<Any>("The product does not exist in the basket", HttpStatus.BAD_REQUEST)
+
         basketEsService.update(basketId) { it.delete(productId) }
-        return basketEsService.getState(basketId)?.getBasket()
+        return ResponseEntity<Any>(basketEsService.getState(basketId)?.getBasket(), HttpStatus.OK)
     }
 
     @GetMapping("/getBasket")
-    fun getBasket(@AuthenticationPrincipal user: UserDetails): MutableMap<UUID, Int>? {
-        val id = userRepository.findOneByEmail(user.username)!!.aggregateId
+    fun getBasket(@AuthenticationPrincipal user: UserDetails): ResponseEntity<Any> {
+        val id = userRepository.findOneByEmail(user.username)?.aggregateId
+            ?: return ResponseEntity<Any>("The user is not logged in", HttpStatus.BAD_REQUEST)
         basketCreateOrPass(id)
         val basketId = userEsService.getState(id)!!.getBasketId()
-        return basketEsService.getState(basketId)?.getBasket()
+        return ResponseEntity<Any>(basketEsService.getState(basketId)?.getBasket(), HttpStatus.OK)
     }
 
 }
