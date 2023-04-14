@@ -1,15 +1,14 @@
 package ru.quipy.controller
 
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.core.userdetails.UserDetails
-import org.bson.types.ObjectId
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
 import ru.quipy.api.BasketAggregate
 import ru.quipy.api.DeliveryAggregate
@@ -51,15 +50,28 @@ class DeliveryController(
             ?: return ResponseEntity<Any>("User not found", HttpStatus.NOT_FOUND)
 
         for (deliveryId in userEsService.getState(userLogged.aggregateId)!!.getDeliveries()) {
-                val delivery = deliveryEsService.getState(deliveryId)!!
-                result.add(
-                    DeliveryListDTO(
-                        deliveryId = deliveryId.toString(),
-                        status = delivery.getDeliveryStatus(),
-                        time = timeslotRepository.findOneById(delivery.getTimeslotId())!!.time
-                    ))
-            }
+            val delivery = deliveryEsService.getState(deliveryId)!!
+            result.add(
+                DeliveryListDTO(
+                    deliveryId = deliveryId.toString(),
+                    status = delivery.getDeliveryStatus(),
+                    time = timeslotRepository.findOneById(delivery.getTimeslotId())!!.time
+                )
+            )
+        }
         return ResponseEntity<Any>(result, HttpStatus.OK)
+    }
+
+    @GetMapping("/list_timeslots")
+    @Operation(
+        summary = "List of timeslots",
+        responses = [
+            ApiResponse(description = "OK", responseCode = "200", content = [Content()]),
+            ApiResponse(description = "Not found", responseCode = "404", content = [Content()])
+        ]
+    )
+    fun deliveryTimeslotList(): ResponseEntity<Any> {
+        return ResponseEntity<Any>(timeslotRepository.findAll(), HttpStatus.OK)
     }
 
     @PostMapping("/create_timeslot")
@@ -82,6 +94,7 @@ class DeliveryController(
         return ResponseEntity<Any>("Delivery timeslot with id = $id created", HttpStatus.CREATED)
 
     }
+
     @PostMapping("/create")
     @Operation(
         summary = "Create new delivery",
@@ -90,8 +103,9 @@ class DeliveryController(
             ApiResponse(description = "User not found", responseCode = "404", content = [Content()])
         ]
     )
-    fun createDelivery(@Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
-                       @RequestBody dto: DeliveryDTO
+    fun createDelivery(
+        @Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
+        @RequestBody dto: DeliveryDTO
     ): ResponseEntity<Any> {
         val userLogged = userRepository.findOneByEmail(user.username)
             ?: return ResponseEntity<Any>("User not found", HttpStatus.NOT_FOUND)
@@ -102,14 +116,22 @@ class DeliveryController(
         }
 
         val basketId = userEsService.getState(userLogged.aggregateId)!!.getBasketId()
-        var basket = basketEsService.getState(basketId)?.getBasket() ?: return ResponseEntity<Any>("Basket doesn't exist", HttpStatus.NOT_FOUND)
+        var basket = basketEsService.getState(basketId)?.getBasket() ?: return ResponseEntity<Any>(
+            "Basket doesn't exist",
+            HttpStatus.NOT_FOUND
+        )
 
         for (item in basket.entries.iterator()) {
             val itemCountInDelivery = min(item.value, productRepository.findOneByProductId(item.key).productCount)
             productEsService.update(item.key) { it.updateCount(productRepository.findOneByProductId(item.key).productCount - itemCountInDelivery) }
             item.setValue(itemCountInDelivery)
         }
-        val delivery = deliveryEsService.create() {  it.createNewDelivery(timeslotId = UUID.fromString(dto.timeslotId), basketId = basketId) }
+        val delivery = deliveryEsService.create {
+            it.createNewDelivery(
+                timeslotId = UUID.fromString(dto.timeslotId),
+                basketId = basketId
+            )
+        }
         userEsService.update(userLogged.aggregateId) { it.addDelivery(delivery.deliveryId) }
         userEsService.update(userLogged.aggregateId) { it.deleteUserBasket() }
         return ResponseEntity<Any>("Delivery created", HttpStatus.CREATED)
@@ -123,7 +145,7 @@ class DeliveryController(
         ],
         security = [SecurityRequirement(name = "bearerAuth")]
     )
-    fun cancelDelivery(@RequestBody dto: DeliveryIdDTO): ResponseEntity<Any>  {
+    fun cancelDelivery(@RequestBody dto: DeliveryIdDTO): ResponseEntity<Any> {
         val basketId = deliveryEsService.getState(UUID.fromString(dto.deliveryId))?.getBasketId()
             ?: return ResponseEntity<Any>("Delivery doesn't have basket", HttpStatus.NOT_FOUND)
         var basket = basketEsService.getState(basketId)?.getBasket()
@@ -158,8 +180,10 @@ class DeliveryController(
             ApiResponse(description = "Bad request", responseCode = "400", content = [Content()])
         ]
     )
-    fun changeDeliveryTimeslot(@Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
-                               @RequestBody dto: DeliveryTimeslotChangedDTO): ResponseEntity<Any> {
+    fun changeDeliveryTimeslot(
+        @Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
+        @RequestBody dto: DeliveryTimeslotChangedDTO
+    ): ResponseEntity<Any> {
         val userLogged = userRepository.findOneByEmail(user.username)
             ?: return ResponseEntity<Any>("User not found", HttpStatus.NOT_FOUND)
 
@@ -168,8 +192,13 @@ class DeliveryController(
         if (userLogged.role != "admin") {
             for (userDeliveryId in userEsService.getState(userLogged.aggregateId)!!.getDeliveries()) {
                 if (userDeliveryId == deliveryId) {
-                    if (deliveryEsService.getState(userDeliveryId)!!.getDeliveryStatus() != Delivery.DeliveryStatus.IN_DELIVERY) {
-                        return ResponseEntity<Any>("Can't change timeslot for order with the status other than IN_DELIVERY", HttpStatus.BAD_REQUEST)
+                    if (deliveryEsService.getState(userDeliveryId)!!
+                            .getDeliveryStatus() != Delivery.DeliveryStatus.IN_DELIVERY
+                    ) {
+                        return ResponseEntity<Any>(
+                            "Can't change timeslot for order with the status other than IN_DELIVERY",
+                            HttpStatus.BAD_REQUEST
+                        )
                     }
                     isUserHasDelivery = true
                     break
@@ -179,8 +208,16 @@ class DeliveryController(
                 return ResponseEntity<Any>("User doesn't have delivery", HttpStatus.NOT_FOUND)
             }
         }
-        timeslotRepository.changeBusy(UUID.fromString(dto.timeslotId), true) ?: return ResponseEntity<Any>(null, HttpStatus.CONFLICT)
-        deliveryEsService.update(deliveryId) { it.changeDeliveryTimeslot(id = deliveryId, timeslotId = UUID.fromString(dto.timeslotId)) }
+        timeslotRepository.changeBusy(UUID.fromString(dto.timeslotId), true) ?: return ResponseEntity<Any>(
+            null,
+            HttpStatus.CONFLICT
+        )
+        deliveryEsService.update(deliveryId) {
+            it.changeDeliveryTimeslot(
+                id = deliveryId,
+                timeslotId = UUID.fromString(dto.timeslotId)
+            )
+        }
         return ResponseEntity<Any>("Delivery timeslot updated", HttpStatus.OK)
     }
 
@@ -200,9 +237,11 @@ class DeliveryController(
             when (dto.status) {
                 Delivery.DeliveryStatus.CANCELED -> {
                     deliveryEsService.update(deliveryId) { it.cancelDelivery(deliveryId) }
-                    val timeslot = timeslotRepository.findOneById(deliveryEsService.getState(deliveryId)!!.getTimeslotId())
+                    val timeslot =
+                        timeslotRepository.findOneById(deliveryEsService.getState(deliveryId)!!.getTimeslotId())
                     timeslot?.busy = false
                 }
+
                 else -> deliveryEsService.update(deliveryId) { it.changeDeliveryStatus(deliveryId, dto.status) }
             }
             return ResponseEntity<Any>("Delivery status updated", HttpStatus.OK)
