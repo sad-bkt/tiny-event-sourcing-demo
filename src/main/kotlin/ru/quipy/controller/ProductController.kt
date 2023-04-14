@@ -1,5 +1,7 @@
 package ru.quipy.controller
 
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import ru.quipy.api.ProductAggregate
 import ru.quipy.core.EventSourcingService
@@ -40,12 +42,19 @@ class ProductController(
     }
 
     @PostMapping("/updateCount")
-    fun updateProduct(@RequestParam id: UUID, @RequestBody productCountDto: ProductCountDTO): Any {
-        return productEsService.update(id) { it.updateCount(productCountDto.count) }
+    fun updateProduct(@RequestParam id: UUID, @RequestBody productCountDto: ProductCountDTO): ResponseEntity<Any> {
+        var tryChangeCount: ProductMongo? = null
+        while (tryChangeCount == null) {
+            val product = productRepository.findOneByProductId(id) ?:
+                return ResponseEntity<Any>("Product with id $id was not found", HttpStatus.NOT_FOUND)
+            tryChangeCount = productRepository.changeCount(id, product.productCount, productCountDto.count)
+        }
+        return ResponseEntity<Any>(productEsService.update(id) { it.updateCount(productCountDto.count) }, HttpStatus.OK)
     }
 
     @PostMapping("/delete")
     fun deleteProduct(@RequestParam id: UUID): Any {
+        productRepository.delete(id)
         return productEsService.update(id) { it.delete(id) }
     }
 
