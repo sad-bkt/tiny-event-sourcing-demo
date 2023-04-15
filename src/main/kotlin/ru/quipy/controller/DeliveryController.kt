@@ -129,7 +129,7 @@ class DeliveryController(
                 continue
             }
             while (item.value <= product!!.productCount) {
-                 if (productRepository.changeCount(item.key, product.productCount, item.value) == null) {
+                 if (productRepository.changeCount(item.key, product.productCount, product.productCount - item.value) == null) {
                     product = productRepository.findOneByProductId(item.key)
                     if (product == null) {
                         basket.remove(item.key)
