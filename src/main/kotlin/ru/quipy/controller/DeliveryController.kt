@@ -124,7 +124,10 @@ class DeliveryController(
         )
 
         if (timeslotRepository.changeBusy(UUID.fromString(dto.timeslotId), true) == null)
-            return ResponseEntity<Any>("This timeslot is busy or doesn't exist. Please, choose another slot", HttpStatus.CONFLICT)
+            return ResponseEntity<Any>(
+                "This timeslot is busy or doesn't exist. Please, choose another slot",
+                HttpStatus.CONFLICT
+            )
         for (item in basket.entries.iterator()) {
             var product = productRepository.findOneByProductId(item.key)
             if (product == null) {
@@ -132,7 +135,12 @@ class DeliveryController(
                 continue
             }
             while (item.value <= product!!.productCount) {
-                 if (productRepository.changeCount(item.key, product.productCount, product.productCount - item.value) == null) {
+                if (productRepository.changeCount(
+                        item.key,
+                        product.productCount,
+                        product.productCount - item.value
+                    ) == null
+                ) {
                     product = productRepository.findOneByProductId(item.key)
                     if (product == null) {
                         basket.remove(item.key)
@@ -154,9 +162,12 @@ class DeliveryController(
                 userEsService.update(userLogged.aggregateId) { it.deleteUserBasket() }
                 break
             }
-            if (item.value > product.productCount){
+            if (item.value > product.productCount) {
                 timeslotRepository.changeBusy(UUID.fromString(dto.timeslotId), false)
-                return ResponseEntity<Any>("The number of items in stock is less than what you want to buy", HttpStatus.BAD_REQUEST)
+                return ResponseEntity<Any>(
+                    "The number of items ${item.key} in stock is less than what you want to buy. You can buy ${product.productCount}",
+                    HttpStatus.BAD_REQUEST
+                )
             }
         }
         return ResponseEntity<Any>("Delivery created", HttpStatus.CREATED)
@@ -224,7 +235,7 @@ class DeliveryController(
 
         var isUserHasDelivery = false
         val deliveryId = UUID.fromString(dto.deliveryId)
-        val deliveryTimeslotId : UUID = deliveryEsService.getState(deliveryId)?.getTimeslotId()
+        val deliveryTimeslotId: UUID = deliveryEsService.getState(deliveryId)?.getTimeslotId()
             ?: return ResponseEntity<Any>("No such delivery id: $deliveryId", HttpStatus.NOT_FOUND)
         if (userLogged.role != "admin") {
             for (userDeliveryId in userEsService.getState(userLogged.aggregateId)!!.getDeliveries()) {
