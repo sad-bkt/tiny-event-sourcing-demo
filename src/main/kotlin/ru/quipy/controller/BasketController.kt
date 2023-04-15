@@ -48,7 +48,7 @@ class BasketController(
             ?: return ResponseEntity<Any>("The user is not logged in", HttpStatus.BAD_REQUEST)
         basketCreateOrPass(id)
         val basketId = userEsService.getState(id)!!.getBasketId()
-        basketEsService.update(basketId) {
+        basketEsService.update(basketId!!) {
             it.addProduct(
                 productCountDTO.productId,
                 productCountDTO.count
@@ -66,7 +66,7 @@ class BasketController(
             ?: return ResponseEntity<Any>("The user is not logged in", HttpStatus.BAD_REQUEST)
         basketCreateOrPass(id)
         val basketId = userEsService.getState(id)!!.getBasketId()
-        if (!basketEsService.getState(basketId)?.existProduct(productCountDTO.productId)!!)
+        if (!basketEsService.getState(basketId!!)?.existProduct(productCountDTO.productId)!!)
             return ResponseEntity<Any>("The product does not exist in the basket", HttpStatus.BAD_REQUEST)
         basketEsService.update(basketId) {
             it.changeCount(
@@ -99,7 +99,7 @@ class BasketController(
             ?: return ResponseEntity<Any>("The user is not logged in", HttpStatus.BAD_REQUEST)
         basketCreateOrPass(id)
         val basketId = userEsService.getState(id)!!.getBasketId()
-        return ResponseEntity<Any>(basketEsService.getState(basketId)?.getBasket(), HttpStatus.OK)
+        return ResponseEntity<Any>(basketEsService.getState(basketId!!)?.getBasket(), HttpStatus.OK)
     }
 
 }

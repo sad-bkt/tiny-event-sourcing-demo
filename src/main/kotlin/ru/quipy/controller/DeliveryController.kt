@@ -116,24 +116,45 @@ class DeliveryController(
         }
 
         val basketId = userEsService.getState(userLogged.aggregateId)!!.getBasketId()
-        var basket = basketEsService.getState(basketId)?.getBasket() ?: return ResponseEntity<Any>(
+        val basket = basketEsService.getState(basketId!!)?.getBasket() ?: return ResponseEntity<Any>(
             "Basket doesn't exist",
             HttpStatus.NOT_FOUND
         )
 
         for (item in basket.entries.iterator()) {
-            val itemCountInDelivery = min(item.value, productRepository.findOneByProductId(item.key)!!.productCount)
-            productEsService.update(item.key) { it.updateCount(productRepository.findOneByProductId(item.key)!!.productCount - itemCountInDelivery) }
-            item.setValue(itemCountInDelivery)
+            var product = productRepository.findOneByProductId(item.key)
+            if (product == null) {
+                basket.remove(item.key)
+                continue
+            }
+            while (item.value <= product!!.productCount) {
+                product = productRepository.findOneByProductId(item.key)
+                if (product == null) {
+                    basket.remove(item.key)
+                    break
+                }
+                productEsService.update(item.key) { it.updateCount(item.value) }
+                productRepository.changeCount(
+                    item.key,
+                    product.productCount,
+                    item.value
+                ) ?: continue
+                item.setValue(item.value)
+
+                val delivery = deliveryEsService.create {
+                    it.createNewDelivery(
+                        timeslotId = UUID.fromString(dto.timeslotId),
+                        basketId = basketId
+                    )
+                }
+                userEsService.update(userLogged.aggregateId) { it.addDelivery(delivery.deliveryId) }
+                userEsService.update(userLogged.aggregateId) { it.deleteUserBasket() }
+                break
+            }
+            if (item.value > product.productCount){
+                return ResponseEntity<Any>("The number of items in stock is less than what you want to buy", HttpStatus.BAD_REQUEST)
+            }
         }
-        val delivery = deliveryEsService.create {
-            it.createNewDelivery(
-                timeslotId = UUID.fromString(dto.timeslotId),
-                basketId = basketId
-            )
-        }
-        userEsService.update(userLogged.aggregateId) { it.addDelivery(delivery.deliveryId) }
-        userEsService.update(userLogged.aggregateId) { it.deleteUserBasket() }
         return ResponseEntity<Any>("Delivery created", HttpStatus.CREATED)
     }
 
@@ -152,8 +173,14 @@ class DeliveryController(
             ?: return ResponseEntity<Any>("Delivery doesn't have basket", HttpStatus.NOT_FOUND)
 
         for (item in basket.entries.iterator()) {
-            val itemCount = item.value + productRepository.findOneByProductId(item.key)!!.productCount
+            val product = productRepository.findOneByProductId(item.key)
+            if (product == null){
+                basket.remove(item.key)
+                continue
+            }
+            val itemCount = item.value + product.productCount
             productEsService.update(item.key) { it.updateCount(itemCount) }
+            productRepository.changeCount(item.key, product.productCount, itemCount)
         }
 
         return changeStatusDelivery(DeliveryStatusChangedDTO(dto.deliveryId, Delivery.DeliveryStatus.CANCELED))

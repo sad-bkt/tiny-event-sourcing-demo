@@ -44,10 +44,11 @@ class ProductController(
     }
 
     @PostMapping("/updateCount")
-    fun updateProduct(@RequestParam id: UUID, @RequestBody productCountDto: ProductCountDTO): ResponseEntity<Any> {
+    fun updateProduct(@RequestBody productCountDto: ProductCountDTO): ResponseEntity<Any> {
         if (productCountDto.count < 0) {
             return ResponseEntity<Any>("Count of the product cannot be negative", HttpStatus.BAD_REQUEST)
         }
+        val id = productCountDto.productId
         var tryChangeCount: ProductMongo? = null
         while (tryChangeCount == null) {
             val product = productRepository.findOneByProductId(id)

@@ -13,7 +13,7 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
     var createdAt: Long = System.currentTimeMillis()
     var updatedAt: Long = System.currentTimeMillis()
     var deliveryIds = ArrayList<UUID>()
-    private lateinit var basketId: UUID
+    private var basketId: UUID? = null
 
     var active: Boolean = true
 
@@ -27,7 +27,7 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
     fun getBasketId() = basketId
 
     fun existBasket(): Boolean {
-        return this::basketId.isInitialized
+        return basketId != null
     }
 
     @StateTransitionFunc
@@ -49,12 +49,7 @@ class UserAggregateState : AggregateState<UUID, UserAggregate> {
 
     @StateTransitionFunc
     fun deleteBasketUserApply(event: UserDeleteBasket) {
-        val field = this.javaClass.getDeclaredField("basketId")
-
-        with(field) {
-            isAccessible = true
-            set(this, null)
-        }
+        basketId = null
     }
 
     @StateTransitionFunc
