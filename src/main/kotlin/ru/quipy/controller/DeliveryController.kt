@@ -41,7 +41,8 @@ class DeliveryController(
         responses = [
             ApiResponse(description = "OK", responseCode = "200", content = [Content()]),
             ApiResponse(description = "Not found", responseCode = "404", content = [Content()])
-        ]
+        ],
+        security = [SecurityRequirement(name = "bearerAuth")]
     )
     fun deliveryList(@Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails): ResponseEntity<Any> {
         val result = ArrayList<DeliveryListDTO>()
@@ -78,7 +79,8 @@ class DeliveryController(
         summary = "Create new timeslot",
         responses = [
             ApiResponse(description = "Created", responseCode = "201", content = [Content()])
-        ]
+        ],
+        security = [SecurityRequirement(name = "bearerAuth")]
     )
     fun createDeliveryTimeslot(@RequestBody time: String): ResponseEntity<Any> {
         val id = UUID.randomUUID()
@@ -100,7 +102,8 @@ class DeliveryController(
         responses = [
             ApiResponse(description = "Created", responseCode = "201", content = [Content()]),
             ApiResponse(description = "User not found", responseCode = "404", content = [Content()])
-        ]
+        ],
+        security = [SecurityRequirement(name = "bearerAuth")]
     )
     fun createDelivery(
         @Parameter(hidden = true) @AuthenticationPrincipal user: UserDetails,
