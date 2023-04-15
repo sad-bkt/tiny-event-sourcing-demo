@@ -1,7 +1,7 @@
 # Shop backend with Tiny Event Sourcing library
 
 Check correctness via
-[Postman collection with requests](https://www.postman.com/lsvwu/workspace/demo/collection/23609182-84a89147-d7ab-4f69-ae5a-d88919589cba?action=share&creator=23609182&ctx=documentation)
+[Postman collection with requests (authorization needed)](https://gold-space-68826.postman.co/workspace/My-Workspace~5148e21d-0eb1-4946-8195-5f85c39aa7f2/collection/23399621-8b3404f7-bf7e-4dfe-8fc1-bd6ece5c0719?action=share&creator=23609182)
 
 # Tiny event sourcing library demo
 

@@ -21,7 +21,6 @@ import ru.quipy.logic.*
 import ru.quipy.service.ProductRepository
 import ru.quipy.service.TimeslotRepository
 import ru.quipy.service.UserRepository
-import java.lang.Integer.min
 import java.util.*
 
 @RestController
@@ -121,6 +120,8 @@ class DeliveryController(
             HttpStatus.NOT_FOUND
         )
 
+        if (timeslotRepository.changeBusy(UUID.fromString(dto.timeslotId), true) == null)
+            return ResponseEntity<Any>("This timeslot is busy or doesn't exist. Please, choose another slot", HttpStatus.CONFLICT)
         for (item in basket.entries.iterator()) {
             var product = productRepository.findOneByProductId(item.key)
             if (product == null) {
@@ -128,18 +129,17 @@ class DeliveryController(
                 continue
             }
             while (item.value <= product!!.productCount) {
-                product = productRepository.findOneByProductId(item.key)
-                if (product == null) {
-                    basket.remove(item.key)
-                    break
+                 if (productRepository.changeCount(item.key, product.productCount, item.value) == null) {
+                    product = productRepository.findOneByProductId(item.key)
+                    if (product == null) {
+                        basket.remove(item.key)
+                        timeslotRepository.changeBusy(UUID.fromString(dto.timeslotId), false)
+                        return ResponseEntity<Any>("No product with such id $item.key", HttpStatus.NOT_FOUND)
+                    }
+                    continue
                 }
                 productEsService.update(item.key) { it.updateCount(item.value) }
-                productRepository.changeCount(
-                    item.key,
-                    product.productCount,
-                    item.value
-                ) ?: continue
-                item.setValue(item.value)
+//                item.setValue(item.value)
 
                 val delivery = deliveryEsService.create {
                     it.createNewDelivery(
@@ -152,6 +152,7 @@ class DeliveryController(
                 break
             }
             if (item.value > product.productCount){
+                timeslotRepository.changeBusy(UUID.fromString(dto.timeslotId), false)
                 return ResponseEntity<Any>("The number of items in stock is less than what you want to buy", HttpStatus.BAD_REQUEST)
             }
         }
@@ -168,19 +169,23 @@ class DeliveryController(
     )
     fun cancelDelivery(@RequestBody dto: DeliveryIdDTO): ResponseEntity<Any> {
         val basketId = deliveryEsService.getState(UUID.fromString(dto.deliveryId))?.getBasketId()
-            ?: return ResponseEntity<Any>("Delivery doesn't have basket", HttpStatus.NOT_FOUND)
+            ?: return ResponseEntity<Any>("Delivery doesn't exist or doesn't have basket", HttpStatus.NOT_FOUND)
         var basket = basketEsService.getState(basketId)?.getBasket()
             ?: return ResponseEntity<Any>("Delivery doesn't have basket", HttpStatus.NOT_FOUND)
 
         for (item in basket.entries.iterator()) {
-            val product = productRepository.findOneByProductId(item.key)
-            if (product == null){
-                basket.remove(item.key)
-                continue
+            while (true) {
+                val product = productRepository.findOneByProductId(item.key)
+                if (product == null) {
+                    basket.remove(item.key)
+                    break
+                }
+
+                val itemCount = item.value + product.productCount
+                productRepository.changeCount(item.key, product.productCount, itemCount) ?: continue
+                productEsService.update(item.key) { it.updateCount(itemCount) }
+                break
             }
-            val itemCount = item.value + product.productCount
-            productEsService.update(item.key) { it.updateCount(itemCount) }
-            productRepository.changeCount(item.key, product.productCount, itemCount)
         }
 
         return changeStatusDelivery(DeliveryStatusChangedDTO(dto.deliveryId, Delivery.DeliveryStatus.CANCELED))
@@ -216,6 +221,8 @@ class DeliveryController(
 
         var isUserHasDelivery = false
         val deliveryId = UUID.fromString(dto.deliveryId)
+        val deliveryTimeslotId : UUID = deliveryEsService.getState(deliveryId)?.getTimeslotId()
+            ?: return ResponseEntity<Any>("No such delivery id: $deliveryId", HttpStatus.NOT_FOUND)
         if (userLogged.role != "admin") {
             for (userDeliveryId in userEsService.getState(userLogged.aggregateId)!!.getDeliveries()) {
                 if (userDeliveryId == deliveryId) {
@@ -239,6 +246,7 @@ class DeliveryController(
             null,
             HttpStatus.CONFLICT
         )
+        timeslotRepository.changeBusy(deliveryTimeslotId, false)
         deliveryEsService.update(deliveryId) {
             it.changeDeliveryTimeslot(
                 id = deliveryId,
@@ -259,14 +267,15 @@ class DeliveryController(
     )
     fun changeStatusDelivery(@RequestBody dto: DeliveryStatusChangedDTO): ResponseEntity<Any> {
         val deliveryId = UUID.fromString(dto.deliveryId)
-        val deliveryStatus = deliveryEsService.getState(deliveryId)!!.getDeliveryStatus()
+        val deliveryStatus = deliveryEsService.getState(deliveryId)?.getDeliveryStatus()
+            ?: return ResponseEntity<Any>("No delivery with such id: ${dto.deliveryId}", HttpStatus.NOT_FOUND)
         if (deliveryStatus != dto.status) {
             when (dto.status) {
                 Delivery.DeliveryStatus.CANCELED -> {
                     deliveryEsService.update(deliveryId) { it.cancelDelivery(deliveryId) }
-                    val timeslot =
-                        timeslotRepository.findOneById(deliveryEsService.getState(deliveryId)!!.getTimeslotId())
-                    timeslot?.busy = false
+                    val timeslotId = deliveryEsService.getState(deliveryId)!!.getTimeslotId()
+//                    timeslot?.busy = false
+                    timeslotRepository.changeBusy(timeslotId, false)
                 }
 
                 else -> deliveryEsService.update(deliveryId) { it.changeDeliveryStatus(deliveryId, dto.status) }

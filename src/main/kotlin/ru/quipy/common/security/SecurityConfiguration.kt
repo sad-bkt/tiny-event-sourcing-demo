@@ -45,6 +45,7 @@ class SecurityConfiguration(
             .antMatchers("/delivery/cancel").hasAuthority("admin")
             .antMatchers("/delivery/complete").hasAuthority("admin")
             .antMatchers("/delivery/change_status").hasAuthority("admin")
+            .antMatchers("/delivery/list").authenticated()
             .antMatchers(HttpMethod.OPTIONS).permitAll()
 //                .anyRequest().hasAuthority("ACCESS")
             .and()
